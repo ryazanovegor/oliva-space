@@ -1,11 +1,15 @@
 const express = require('express');
-const { Telegraf } = require('telegraf');
+const { Telegraf, Markup } = require('telegraf'); // Markup нужен для кнопки
 const fs = require('fs');
 require('dotenv').config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
+
+// ВАЖНО: тут сразу проставим адрес Render
 const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
+
 
 
 
@@ -79,12 +83,16 @@ function statusToText(status) {
 const bot = new Telegraf(BOT_TOKEN);
 
 // /start
-// /panel — прислать ссылку на веб-панель
+// /panel — присылает кнопку со ссылкой на веб-панель
 bot.command('panel', (ctx) => {
   return ctx.reply(
-    'Открой панель Oliva Space 🌿 в браузере по этой ссылке:\n' + BASE_URL
+    'Открой панель Oliva Space 🌿 по кнопке ниже:',
+    Markup.inlineKeyboard([
+      Markup.button.url('Открыть панель', BASE_URL)
+    ])
   );
 });
+
 
 bot.start((ctx) => {
   ctx.reply(
