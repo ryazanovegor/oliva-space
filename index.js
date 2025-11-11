@@ -84,20 +84,21 @@ function statusToText(status) {
 const bot = new Telegraf(BOT_TOKEN);
 
 // /start
-// /panel — открывает веб-панель внутри Telegram
 bot.command('panel', async (ctx) => {
   await ctx.reply('Открой панель Oliva Space 🌿 прямо здесь 👇', {
     reply_markup: {
-      keyboard: [
+      inline_keyboard: [
         [
-          { text: '🌿 Open Oliva Space', web_app: { url: BASE_URL } }
+          {
+            text: 'Open',
+            web_app: { url: BASE_URL }
+          }
         ]
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true // 👈 кнопка исчезнет после нажатия
+      ]
     }
   });
 });
+
 
 
 
