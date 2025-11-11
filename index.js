@@ -5,7 +5,8 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
+
 
 
 if (!BOT_TOKEN) {
