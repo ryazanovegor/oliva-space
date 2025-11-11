@@ -5,7 +5,7 @@
   <title>Oliva Space 🌿 — биржа микрозадач</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- ✅ Подключаем Telegram WebApp -->
+  <!-- Telegram WebApp JS -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -26,17 +26,20 @@
 
     .app {
       flex: 1;
+      padding: 18px 20px 24px;
       max-width: 1100px;
       width: 100%;
       margin: 0 auto;
-      padding: 18px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     header {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 16px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
     }
 
     .logo {
@@ -62,8 +65,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 4px;
-      align-self: flex-start;
     }
 
     .balance-pill button {
@@ -79,7 +80,7 @@
     .tabs {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
       border-bottom: 1px solid rgba(51, 65, 85, 0.8);
       padding-bottom: 4px;
     }
@@ -95,7 +96,7 @@
       gap: 4px;
       opacity: 0.8;
       background: transparent;
-      color: #e5e7eb;
+      color: inherit;
     }
 
     .tab.active {
@@ -105,7 +106,10 @@
     }
 
     main {
-      display: block;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .panel {
@@ -117,17 +121,17 @@
     }
 
     .panel-header {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .panel-header h2 {
-      font-size: 15px;
+      font-size: 16px;
       margin-bottom: 4px;
     }
 
     .panel-subtitle {
       font-size: 12px;
-      opacity: 0.75;
+      opacity: 0.8;
     }
 
     .task-list {
@@ -141,15 +145,14 @@
     }
 
     .task {
-      background: rgba(15, 23, 42, 0.96);
+      background: rgba(15, 23, 42, 0.9);
       border-radius: 14px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border: 1px solid rgba(51, 65, 85, 0.9);
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 4px 10px;
       align-items: center;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
     }
 
     .task-title {
@@ -170,7 +173,7 @@
       text-transform: lowercase;
     }
 
-    .task-status.status-open {
+    .status-open {
       background: rgba(34, 197, 94, 0.16);
       color: #4ade80;
     }
@@ -211,20 +214,12 @@
     .error-state {
       margin-top: 8px;
       font-size: 12px;
-    }
-
-    .empty-state {
       opacity: 0.7;
     }
 
     .error-state {
       color: #f97373;
-    }
-
-    .chat-placeholder {
-      font-size: 12px;
-      opacity: 0.75;
-      margin-top: 6px;
+      opacity: 1;
     }
 
     footer {
@@ -239,10 +234,12 @@
   <div class="app">
     <!-- ====== ШАПКА ====== -->
     <header>
-      <div class="logo">
-        Oliva <span>Space</span>
+      <div>
+        <div class="logo">
+          Oliva <span>Space</span>
+        </div>
+        <div class="tagline">микрозадачи • быстрые деньги</div>
       </div>
-      <div class="tagline">микрозадачи • быстрые деньги</div>
 
       <div class="balance-pill" id="balance-label">
         💰 Баланс: <span id="balance-value">0 ₽</span>
@@ -269,7 +266,7 @@
         </div>
 
         <div id="market-tasks" class="task-list">
-          <!-- Сюда будем подгружать задачи с сервера -->
+          <!-- Задачи подгружаются из /api/tasks -->
         </div>
 
         <div class="empty-state" id="market-empty" style="display:none;">
@@ -318,7 +315,7 @@
           </p>
         </div>
 
-        <div class="chat-placeholder">
+        <div class="empty-state">
           Чат мы подключим позже. Пока общение идёт через Telegram-бота.
         </div>
       </section>
@@ -326,89 +323,104 @@
   </div>
 
   <footer>
-    Oliva Space 🌿 · Telegram-бот + веб-панель на одном бэкенде.  
-    Действия с задачами сейчас выполняются через бота.
+    Oliva Space 🌿 · Telegram-бот + веб-панель на одном бэкенде. Действия с задачами сейчас выполняются через бота.
   </footer>
 
-  <!-- ====== ЛОГИКА ВКЛАДОК + ФЕЙКОВЫЕ ЗАДАЧИ ====== -->
   <script>
-    // Переключение вкладок
+    // ===== Переключение вкладок =====
     const tabButtons = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('.panel');
 
-    tabButtons.forEach((btn) => {
+    tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.dataset.tab;
 
-        tabButtons.forEach((b) => b.classList.toggle('active', b === btn));
-        panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
+        tabButtons.forEach(b => b.classList.toggle('active', b === btn));
+        panels.forEach(p => p.classList.toggle('active', p.dataset.panel === tab));
       });
     });
 
-    // Заглушка задач для маркета
-    const marketList = document.getElementById('market-tasks');
+    // ===== Маркет задач: загрузка из /api/tasks =====
+    const marketList  = document.getElementById('market-tasks');
     const marketEmpty = document.getElementById('market-empty');
     const marketError = document.getElementById('market-error');
 
-    function renderStubTasks() {
-      const fakeTasks = [
-        { id: 1, title: 'Написать отзыв о приложении', price: 50 },
-        { id: 2, title: 'Сделать скриншоты для Google Play', price: 120 },
-      ];
+    async function loadMarket() {
+      if (!marketList) return;
 
       marketList.innerHTML = '';
-      marketEmpty.style.display = fakeTasks.length ? 'none' : 'block';
+      marketEmpty.style.display = 'none';
       marketError.style.display = 'none';
 
-      fakeTasks.forEach((task) => {
-        const item = document.createElement('div');
-        item.className = 'task';
+      try {
+        const res = await fetch('/api/tasks');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
 
-        const title = document.createElement('div');
-        title.className = 'task-title';
-        title.textContent = task.title;
+        const tasks = await res.json();
 
-        const meta = document.createElement('div');
-        meta.className = 'task-meta';
-        meta.textContent = `#${task.id} • ${task.price} ₽`;
+        if (!Array.isArray(tasks) || tasks.length === 0) {
+          marketEmpty.style.display = 'block';
+          return;
+        }
 
-        const status = document.createElement('div');
-        status.className = 'task-status status-open';
-        status.textContent = 'open';
+        // Берём только задачи в статусе "open"
+        const openTasks = tasks.filter(t => t.status === 'open');
 
-        const actions = document.createElement('div');
-        actions.className = 'task-actions';
+        if (openTasks.length === 0) {
+          marketEmpty.innerHTML =
+            'Сейчас нет задач в статусе <b>open</b>.<br/>Добавь новую через бота командой <b>/newtask</b>.';
+          marketEmpty.style.display = 'block';
+          return;
+        }
 
-        const btnTake = document.createElement('button');
-        btnTake.className = 'btn btn-primary';
-        btnTake.textContent = 'Взять в работу';
-        btnTake.disabled = true; // включим, когда привяжем к бэкенду
+        openTasks.forEach(task => {
+          const item = document.createElement('div');
+          item.className = 'task';
 
-        const btnMore = document.createElement('button');
-        btnMore.className = 'btn btn-ghost';
-        btnMore.textContent = 'Подробнее';
+          const title = document.createElement('div');
+          title.className = 'task-title';
+          title.textContent = (task.text || 'Без названия задачи').trim();
 
-        actions.appendChild(btnTake);
-        actions.appendChild(btnMore);
+          const meta = document.createElement('div');
+          meta.className = 'task-meta';
+          const price = task.price != null ? task.price + ' ₽' : 'без цены';
+          meta.textContent = `#${task.id} • ${price}`;
 
-        item.appendChild(title);
-        item.appendChild(status);
-        item.appendChild(meta);
-        item.appendChild(actions);
+          const status = document.createElement('div');
+          status.className = 'task-status status-open';
+          status.textContent = 'open';
 
-        marketList.appendChild(item);
-      });
+          const actions = document.createElement('div');
+          actions.className = 'task-actions';
+
+          const btnTake = document.createElement('button');
+          btnTake.className = 'btn btn-primary';
+          btnTake.textContent = 'Взять в работу (через бота)';
+          btnTake.disabled = true; // включим позже, когда добавим API для взятия задачи
+
+          const btnMore = document.createElement('button');
+          btnMore.className = 'btn btn-ghost';
+          btnMore.textContent = 'Подробнее';
+          btnMore.disabled = true;
+
+          actions.appendChild(btnTake);
+          actions.appendChild(btnMore);
+
+          item.appendChild(title);
+          item.appendChild(status);
+          item.appendChild(meta);
+          item.appendChild(actions);
+
+          marketList.appendChild(item);
+        });
+      } catch (err) {
+        console.error(err);
+        marketError.textContent = 'Не удалось загрузить задачи: ' + err.message;
+        marketError.style.display = 'block';
+      }
     }
 
-    renderStubTasks();
-
-    // Небольшая инициализация Telegram WebApp (если открыто из бота)
-    if (window.Telegram && window.Telegram.WebApp) {
-      const tg = window.Telegram.WebApp;
-      tg.expand();
-      console.log('Telegram WebApp user:', tg.initDataUnsafe?.user);
-    }
+    loadMarket();
   </script>
 </body>
 </html>
-
