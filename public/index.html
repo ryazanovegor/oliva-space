@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Oliva Space – панель задач</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .card {
+      background: #020617;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border: 1px solid #1f2937;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #1f2937;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #030712;
+      position: sticky;
+      top: 0;
+    }
+    .status-open { color: #4ade80; }
+    .status-in_progress { color: #60a5fa; }
+    .status-submitted { color: #facc15; }
+    .status-cancelled { color: #f97373; }
+    .status-done { color: #a855f7; }
+    .badge {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #111827;
+    }
+  </style>
+</head>
+<body>
+  <h1>Oliva Space 🌿 – панель задач</h1>
+  <p>Это простая админ-панель. Задачи создаются и берутся в работу через Telegram-бота.</p>
+
+  <div class="card">
+    <h2>Задачи на бирже</h2>
+    <div id="tasks">Загружаю задачи…</div>
+  </div>
+
+  <script>
+    function statusToText(status) {
+      switch (status) {
+        case 'open': return 'открыта';
+        case 'in_progress': return 'в работе';
+        case 'submitted': return 'на проверке';
+        case 'cancelled': return 'отменена';
+        case 'done': return 'завершена';
+        default: return status;
+      }
+    }
+
+    async function loadTasks() {
+      try {
+        const res = await fetch('/api/tasks');
+        const tasks = await res.json();
+
+        const container = document.getElementById('tasks');
+        if (!tasks.length) {
+          container.textContent = 'Пока задач нет. Создай задачу через бота командой /newtask 🙂';
+          return;
+        }
+
+        let html = '<table><thead><tr>' +
+          '<th>ID</th><th>Заказчик</th><th>Исполнитель</th>' +
+          '<th>Цена</th><th>Статус</th><th>Текст</th></tr></thead><tbody>';
+
+        for (const t of tasks) {
+          const statusText = statusToText(t.status);
+          html += `
+            <tr>
+              <td>#${t.id}</td>
+              <td>${t.customerId || '-'}</td>
+              <td>${t.performerId || '-'}</td>
+              <td>${t.price != null ? t.price.toFixed(2) + '₽' : '-'}</td>
+              <td><span class="badge status-${t.status}">${statusText}</span></td>
+              <td>${t.text}</td>
+            </tr>
+          `;
+        }
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (err) {
+        document.getElementById('tasks').textContent = 'Ошибка загрузки задач';
+        console.error(err);
+      }
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
