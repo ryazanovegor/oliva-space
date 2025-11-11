@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <title>Oliva Space 🌿 — биржа микрозадач</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- ✅ Подключаем Telegram WebApp -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -20,13 +24,19 @@
       flex-direction: column;
     }
 
+    .app {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 20px 24px;
+    }
+
     header {
-      padding: 12px 20px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.3);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: radial-gradient(circle at top left, #22c55e 0, #020617 55%);
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
     }
 
     .logo {
@@ -52,6 +62,8 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      margin-top: 4px;
+      align-self: flex-start;
     }
 
     .balance-pill button {
@@ -62,14 +74,6 @@
       padding: 4px 10px;
       font-size: 11px;
       cursor: pointer;
-    }
-
-    main {
-      flex: 1;
-      padding: 18px 20px 24px;
-      max-width: 1100px;
-      width: 100%;
-      margin: 0 auto;
     }
 
     .tabs {
@@ -90,6 +94,8 @@
       align-items: center;
       gap: 4px;
       opacity: 0.8;
+      background: transparent;
+      color: #e5e7eb;
     }
 
     .tab.active {
@@ -98,40 +104,33 @@
       opacity: 1;
     }
 
-    .section {
-      display: none;
-    }
-
-    .section.active {
+    main {
       display: block;
     }
 
-    .card {
-      background: rgba(15, 23, 42, 0.96);
-      border-radius: 18px;
-      padding: 14px 16px 16px;
-      border: 1px solid rgba(30, 64, 175, 0.4);
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+    .panel {
+      display: none;
     }
 
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 8px;
+    .panel.active {
+      display: block;
+    }
+
+    .panel-header {
       margin-bottom: 10px;
     }
 
-    .card-header h2 {
+    .panel-header h2 {
       font-size: 15px;
+      margin-bottom: 4px;
     }
 
-    .card-header small {
-      font-size: 11px;
-      opacity: 0.7;
+    .panel-subtitle {
+      font-size: 12px;
+      opacity: 0.75;
     }
 
-    .tasks-list {
+    .task-list {
       margin-top: 4px;
       display: flex;
       flex-direction: column;
@@ -142,14 +141,15 @@
     }
 
     .task {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.96);
       border-radius: 14px;
-      padding: 8px 10px;
+      padding: 10px 12px;
       border: 1px solid rgba(51, 65, 85, 0.9);
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 4px 10px;
       align-items: center;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
     }
 
     .task-title {
@@ -170,29 +170,9 @@
       text-transform: lowercase;
     }
 
-    .status-open {
+    .task-status.status-open {
       background: rgba(34, 197, 94, 0.16);
       color: #4ade80;
-    }
-
-    .status-in_progress {
-      background: rgba(234, 179, 8, 0.16);
-      color: #facc15;
-    }
-
-    .status-submitted {
-      background: rgba(59, 130, 246, 0.16);
-      color: #60a5fa;
-    }
-
-    .status-done {
-      background: rgba(147, 51, 234, 0.2);
-      color: #a855f7;
-    }
-
-    .status-cancelled {
-      background: rgba(248, 113, 113, 0.18);
-      color: #f87171;
     }
 
     .task-actions {
@@ -227,16 +207,24 @@
       cursor: default;
     }
 
-    .empty {
+    .empty-state,
+    .error-state {
       margin-top: 8px;
       font-size: 12px;
+    }
+
+    .empty-state {
       opacity: 0.7;
     }
 
-    .error {
-      margin-top: 8px;
-      font-size: 12px;
+    .error-state {
       color: #f97373;
+    }
+
+    .chat-placeholder {
+      font-size: 12px;
+      opacity: 0.75;
+      margin-top: 6px;
     }
 
     footer {
@@ -248,143 +236,141 @@
   </style>
 </head>
 <body>
-<header>
-  <div>
-    <div class="logo">Oliva <span>Space</span></div>
-    <div class="tagline">Биржа микрозадач: бот + веб-панель</div>
+  <div class="app">
+    <!-- ====== ШАПКА ====== -->
+    <header>
+      <div class="logo">
+        Oliva <span>Space</span>
+      </div>
+      <div class="tagline">микрозадачи • быстрые деньги</div>
+
+      <div class="balance-pill" id="balance-label">
+        💰 Баланс: <span id="balance-value">0 ₽</span>
+      </div>
+    </header>
+
+    <!-- ====== ВКЛАДКИ ====== -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="market">🛒 Маркет задач</button>
+      <button class="tab" data-tab="my-tasks">📋 Мои задачи</button>
+      <button class="tab" data-tab="my-works">🛠️ Мои работы</button>
+      <button class="tab" data-tab="chat">💬 Чат</button>
+    </nav>
+
+    <!-- ====== СОДЕРЖИМОЕ ВКЛАДОК ====== -->
+    <main>
+      <!-- МАРКЕТ ЗАДАЧ -->
+      <section class="panel active" data-panel="market">
+        <div class="panel-header">
+          <h2>Маркет задач</h2>
+          <p class="panel-subtitle">
+            Здесь появляются все открытые задачи от заказчиков Oliva Space.
+          </p>
+        </div>
+
+        <div id="market-tasks" class="task-list">
+          <!-- Сюда будем подгружать задачи с сервера -->
+        </div>
+
+        <div class="empty-state" id="market-empty" style="display:none;">
+          Пока нет открытых задач. Добавь задачу через бота командой <b>/newtask</b>.
+        </div>
+
+        <div class="error-state" id="market-error" style="display:none;">
+          Не удалось загрузить задачи. Попробуй обновить страницу.
+        </div>
+      </section>
+
+      <!-- МОИ ЗАДАЧИ КАК ЗАКАЗЧИКА -->
+      <section class="panel" data-panel="my-tasks">
+        <div class="panel-header">
+          <h2>Мои задачи</h2>
+          <p class="panel-subtitle">
+            Задачи, которые ты создал как заказчик.
+          </p>
+        </div>
+
+        <div class="empty-state">
+          Скоро здесь появится список твоих задач из бота (команды <b>/newtask</b>, <b>/tasks</b>).
+        </div>
+      </section>
+
+      <!-- МОИ РАБОТЫ КАК ИСПОЛНИТЕЛЯ -->
+      <section class="panel" data-panel="my-works">
+        <div class="panel-header">
+          <h2>Мои работы</h2>
+          <p class="panel-subtitle">
+            Задачи, которые ты взял в работу как исполнитель.
+          </p>
+        </div>
+
+        <div class="empty-state">
+          В будущем здесь будут задачки, которые ты взял через бота командой <b>/take</b>.
+        </div>
+      </section>
+
+      <!-- ЧАТ ИСПОЛНИТЕЛЯ С ЗАКАЗЧИКОМ -->
+      <section class="panel" data-panel="chat">
+        <div class="panel-header">
+          <h2>Чат</h2>
+          <p class="panel-subtitle">
+            Мини-чат между исполнителем и заказчиком по конкретной задаче.
+          </p>
+        </div>
+
+        <div class="chat-placeholder">
+          Чат мы подключим позже. Пока общение идёт через Telegram-бота.
+        </div>
+      </section>
+    </main>
   </div>
-  <div class="balance-pill">
-    <span id="balance-label">Баланс: — ₽</span>
-    <button id="balance-topup" disabled>Пополнить (через бота)</button>
-  </div>
-</header>
 
-<main>
-  <div class="tabs">
-    <div class="tab active" data-target="market">🛒 Маркет задач</div>
-    <div class="tab" data-target="mytasks">📋 Мои задачи</div>
-    <div class="tab" data-target="myworks">🛠️ Мои работы</div>
-    <div class="tab" data-target="chat">💬 Чат (скоро)</div>
-  </div>
+  <footer>
+    Oliva Space 🌿 · Telegram-бот + веб-панель на одном бэкенде.  
+    Действия с задачами сейчас выполняются через бота.
+  </footer>
 
-  <!-- Маркет задач -->
-  <section id="market" class="section active">
-    <div class="card">
-      <div class="card-header">
-        <h2>Маркет задач</h2>
-        <small>Задачи, доступные для взятия в работу</small>
-      </div>
-      <div id="market-error" class="error" style="display:none;"></div>
-      <div id="market-tasks" class="tasks-list"></div>
-      <div id="market-empty" class="empty" style="display:none;">
-        Сейчас нет доступных задач. Попробуй добавить задачу через бота командой <b>/newtask</b>.
-      </div>
-    </div>
-  </section>
+  <!-- ====== ЛОГИКА ВКЛАДОК + ФЕЙКОВЫЕ ЗАДАЧИ ====== -->
+  <script>
+    // Переключение вкладок
+    const tabButtons = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
 
-  <!-- Мои задачи (заказчик) -->
-  <section id="mytasks" class="section">
-    <div class="card">
-      <div class="card-header">
-        <h2>Мои задачи</h2>
-        <small>Заглушка — станет интерактивным после подключения Telegram WebApp</small>
-      </div>
-      <div class="empty">
-        Здесь будут показываться задачи, где ты — <b>заказчик</b>.<br/>
-        Чтобы это заработало, мы привяжем веб-панель к твоему Telegram-аккаунту.
-      </div>
-    </div>
-  </section>
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
 
-  <!-- Мои работы (исполнитель) -->
-  <section id="myworks" class="section">
-    <div class="card">
-      <div class="card-header">
-        <h2>Мои работы</h2>
-        <small>Задачи, которые ты взял в работу (позже)</small>
-      </div>
-      <div class="empty">
-        Тут появятся задачи, где ты — <b>исполнитель</b>.<br/>
-        Пока эту информацию можно смотреть через команды бота <b>/myworks</b>.
-      </div>
-    </div>
-  </section>
-
-  <!-- Чат -->
-  <section id="chat" class="section">
-    <div class="card">
-      <div class="card-header">
-        <h2>Чат исполнителя и заказчика</h2>
-        <small>Планируется как отдельный модуль</small>
-      </div>
-      <div class="empty">
-        В планах — простой чат по каждой задаче прямо в вебе.<br/>
-        Для этого понадобится авторизация через Telegram WebApp и новые API на сервере.
-      </div>
-    </div>
-  </section>
-</main>
-
-<footer>
-  Oliva Space 🌿 · Telegram-бот + веб-панель на одном бэкенде. Действия с задачами сейчас выполняются через бота.
-</footer>
-
-<script>
-  // Переключение вкладок
-  const tabs = document.querySelectorAll('.tab');
-  const sections = document.querySelectorAll('.section');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      sections.forEach(s => s.classList.remove('active'));
-      tab.classList.add('active');
-      const id = tab.getAttribute('data-target');
-      document.getElementById(id).classList.add('active');
+        tabButtons.forEach((b) => b.classList.toggle('active', b === btn));
+        panels.forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
+      });
     });
-  });
 
-  // Загрузка задач для маркета
-  async function loadMarket() {
-    const listEl = document.getElementById('market-tasks');
-    const errorEl = document.getElementById('market-error');
-    const emptyEl = document.getElementById('market-empty');
+    // Заглушка задач для маркета
+    const marketList = document.getElementById('market-tasks');
+    const marketEmpty = document.getElementById('market-empty');
+    const marketError = document.getElementById('market-error');
 
-    listEl.innerHTML = '';
-    errorEl.style.display = 'none';
-    emptyEl.style.display = 'none';
+    function renderStubTasks() {
+      const fakeTasks = [
+        { id: 1, title: 'Написать отзыв о приложении', price: 50 },
+        { id: 2, title: 'Сделать скриншоты для Google Play', price: 120 },
+      ];
 
-    try {
-      const res = await fetch('/api/tasks');
-      if (!res.ok) {
-        throw new Error('HTTP ' + res.status);
-      }
-      const tasks = await res.json();
+      marketList.innerHTML = '';
+      marketEmpty.style.display = fakeTasks.length ? 'none' : 'block';
+      marketError.style.display = 'none';
 
-      if (!Array.isArray(tasks) || tasks.length === 0) {
-        emptyEl.style.display = 'block';
-        return;
-      }
-
-      const openTasks = tasks.filter(t => t.status === 'open');
-
-      if (openTasks.length === 0) {
-        emptyEl.innerHTML = 'Сейчас нет задач в статусе <b>open</b>.<br/>Добавь новую через бота командой <b>/newtask</b>.';
-        emptyEl.style.display = 'block';
-        return;
-      }
-
-      openTasks.forEach(task => {
+      fakeTasks.forEach((task) => {
         const item = document.createElement('div');
         item.className = 'task';
 
         const title = document.createElement('div');
         title.className = 'task-title';
-        title.textContent = (task.text || 'Без названия задачи').trim();
+        title.textContent = task.title;
 
         const meta = document.createElement('div');
         meta.className = 'task-meta';
-        const price = task.price != null ? task.price.toFixed(2) + ' ₽' : 'без цены';
-        meta.textContent = `#${task.id} • ${price}`;
+        meta.textContent = `#${task.id} • ${task.price} ₽`;
 
         const status = document.createElement('div');
         status.className = 'task-status status-open';
@@ -395,35 +381,34 @@
 
         const btnTake = document.createElement('button');
         btnTake.className = 'btn btn-primary';
-        btnTake.textContent = 'Взять в работу (через бота)';
-        btnTake.disabled = true;
+        btnTake.textContent = 'Взять в работу';
+        btnTake.disabled = true; // включим, когда привяжем к бэкенду
 
-        const btnDetails = document.createElement('button');
-        btnDetails.className = 'btn btn-ghost';
-        btnDetails.textContent = 'Подробнее';
-        btnDetails.disabled = true;
+        const btnMore = document.createElement('button');
+        btnMore.className = 'btn btn-ghost';
+        btnMore.textContent = 'Подробнее';
 
         actions.appendChild(btnTake);
-        actions.appendChild(btnDetails);
+        actions.appendChild(btnMore);
 
         item.appendChild(title);
         item.appendChild(status);
         item.appendChild(meta);
         item.appendChild(actions);
 
-        listEl.appendChild(item);
+        marketList.appendChild(item);
       });
-    } catch (err) {
-      console.error(err);
-      errorEl.textContent = 'Не удалось загрузить задачи: ' + err.message;
-      errorEl.style.display = 'block';
     }
-  }
 
-  loadMarket();
-</script>
+    renderStubTasks();
+
+    // Небольшая инициализация Telegram WebApp (если открыто из бота)
+    if (window.Telegram && window.Telegram.WebApp) {
+      const tg = window.Telegram.WebApp;
+      tg.expand();
+      console.log('Telegram WebApp user:', tg.initDataUnsafe?.user);
+    }
+  </script>
 </body>
 </html>
 
-
-    
