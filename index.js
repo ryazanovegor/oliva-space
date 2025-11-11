@@ -13,6 +13,7 @@ const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
 
 
 
+
 if (!BOT_TOKEN) {
   throw new Error('Не указан BOT_TOKEN. Вставь токен от BotFather в переменную BOT_TOKEN.');
 }
@@ -83,15 +84,22 @@ function statusToText(status) {
 const bot = new Telegraf(BOT_TOKEN);
 
 // /start
-// /panel — присылает кнопку со ссылкой на веб-панель
-bot.command('panel', (ctx) => {
-  return ctx.reply(
-    'Открой панель Oliva Space 🌿 по кнопке ниже:',
-    Markup.inlineKeyboard([
-      Markup.button.url('Открыть панель', BASE_URL)
-    ])
-  );
+// /panel — открывает веб-панель внутри Telegram
+bot.command('panel', async (ctx) => {
+  await ctx.reply('Открой панель Oliva Space 🌿 прямо здесь 👇', {
+    reply_markup: {
+      keyboard: [
+        [
+          { text: '🌿 Open Oliva Space', web_app: { url: BASE_URL } }
+        ]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true // 👈 кнопка исчезнет после нажатия
+    }
+  });
 });
+
+
 
 
 bot.start((ctx) => {
