@@ -78,6 +78,85 @@ function statusToText(status) {
 
 // ====== НАСТРОЙКА БОТА OLIVA SPACE ======
 const bot = new Telegraf(BOT_TOKEN);
+const { Markup } = require('telegraf'); // убедись, что вверху файла уже подключён Markup
+
+// Функция, отправляющая меню
+function sendInlineMenu(ctx) {
+  return ctx.reply(
+    'Выбери действие:',
+    Markup.inlineKeyboard([
+      [Markup.button.webApp('🔗 Open', BASE_URL)],
+      [
+        Markup.button.callback('🛒 Маркет', 'act:market'),
+        Markup.button.callback('📋 Мои задачи', 'act:mytasks')
+      ],
+      [
+        Markup.button.callback('🧰 Мои работы', 'act:myworks'),
+        Markup.button.callback('💰 Баланс', 'act:balance')
+      ],
+      [Markup.button.callback('❓ Справка', 'act:help')],
+    ])
+  );
+}
+
+// --- /start (короткий, с кнопкой Open под строкой ввода)
+bot.start(async (ctx) => {
+  await ctx.reply(
+    'Открой в приложении 🚀',
+    {
+      reply_markup: {
+        keyboard: [
+          [
+            { text: 'Open', web_app: { url: BASE_URL } }
+          ]
+        ],
+        resize_keyboard: true,
+        is_persistent: true,
+        one_time_keyboard: false
+      }
+    }
+  );
+});
+
+
+// --- /panel (если хочешь, чтобы по /panel тоже показывалось меню)
+bot.command('panel', async (ctx) => {
+  await sendInlineMenu(ctx);
+});
+
+// --- Обработчики нажатий на inline-кнопки
+
+bot.action('act:market', async (ctx) => {
+  await ctx.answerCbQuery(); // убираем "часики"
+  // Вызовем уже существующую команду:
+  ctx.message.text = '/market';
+  bot.handleUpdate(ctx.update);
+});
+
+bot.action('act:mytasks', async (ctx) => {
+  await ctx.answerCbQuery();
+  ctx.message.text = '/mytasks';
+  bot.handleUpdate(ctx.update);
+});
+
+bot.action('act:myworks', async (ctx) => {
+  await ctx.answerCbQuery();
+  ctx.message.text = '/myworks';
+  bot.handleUpdate(ctx.update);
+});
+
+bot.action('act:balance', async (ctx) => {
+  await ctx.answerCbQuery();
+  ctx.message.text = '/balance';
+  bot.handleUpdate(ctx.update);
+});
+
+bot.action('act:help', async (ctx) => {
+  await ctx.answerCbQuery();
+  ctx.message.text = '/help';
+  bot.handleUpdate(ctx.update);
+});
+
 
 // /panel — присылаем reply keyboard с Telegram WebApp кнопкой
 bot.command('panel', async (ctx) => {
