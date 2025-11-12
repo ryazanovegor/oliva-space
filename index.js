@@ -84,23 +84,24 @@ function statusToText(status) {
 const bot = new Telegraf(BOT_TOKEN);
 
 // /start
+const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
+
 bot.command('panel', async (ctx) => {
-  await ctx.reply('Открой панель Oliva Space 🌿 прямо здесь 👇', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: 'Open',
-            web_app: { url: BASE_URL }
-          }
-        ]
-      ]
+  return ctx.reply(
+    'Открой панель Oliva Space 🌿 прямо здесь 👇',
+    {
+      reply_markup: {
+        keyboard: [
+          [
+            { text: 'Open', web_app: { url: BASE_URL } }
+          ]
+        ],
+        resize_keyboard: true,
+        is_persistent: true
+      }
     }
-  });
+  );
 });
-
-
-
 
 
 bot.start((ctx) => {
