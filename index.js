@@ -1,5 +1,6 @@
+// index.js
 const express = require('express');
-const { Telegraf, Markup } = require('telegraf'); // Markup нужен для кнопки
+const { Telegraf } = require('telegraf'); // Markup не обязателен для reply keyboard
 const fs = require('fs');
 require('dotenv').config();
 
@@ -7,19 +8,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-// ВАЖНО: тут сразу проставим адрес Render
+// Единственное объявление BASE_URL (для Telegram WebApp кнопки)
 const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
-
-
-
-
 
 if (!BOT_TOKEN) {
   throw new Error('Не указан BOT_TOKEN. Вставь токен от BotFather в переменную BOT_TOKEN.');
 }
 
 // ====== ПЕРСИСТЕНТНЫЕ ДАННЫЕ (ФАЙЛ) ======
-
 const DATA_FILE = 'data.json';
 
 // структура данных по умолчанию
@@ -83,9 +79,7 @@ function statusToText(status) {
 // ====== НАСТРОЙКА БОТА OLIVA SPACE ======
 const bot = new Telegraf(BOT_TOKEN);
 
-// /start
-const BASE_URL = process.env.BASE_URL || 'https://oliva-space.onrender.com';
-
+// /panel — присылаем reply keyboard с Telegram WebApp кнопкой
 bot.command('panel', async (ctx) => {
   return ctx.reply(
     'Открой панель Oliva Space 🌿 прямо здесь 👇',
@@ -103,7 +97,7 @@ bot.command('panel', async (ctx) => {
   );
 });
 
-
+// /start — справка
 bot.start((ctx) => {
   ctx.reply(
     'Добро пожаловать в Oliva Space 🌿 — мини-биржу микро-задач!\n\n' +
@@ -125,14 +119,11 @@ bot.start((ctx) => {
 });
 
 // ====== БАЛАНС ======
-
-// /balance — показать баланс
 bot.command('balance', (ctx) => {
   const user = getUser(ctx.from.id);
   ctx.reply(`Твой баланс: ${user.balance.toFixed(2)}₽ (виртуальный, учебный)`);
 });
 
-// /deposit сумма — пополнить баланс
 bot.command('deposit', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   const amountStr = parts[1];
@@ -160,8 +151,6 @@ bot.command('deposit', (ctx) => {
 });
 
 // ====== ЗАДАЧИ БИРЖИ ======
-
-// /newtask цена текст — создать задачу (заказчик)
 bot.command('newtask', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   if (parts.length < 3) {
@@ -174,7 +163,6 @@ bot.command('newtask', (ctx) => {
 
   const priceStr = parts[1];
   const price = parseFloat(priceStr.replace(',', '.'));
-
   if (isNaN(price) || price <= 0) {
     return ctx.reply('Цена должна быть положительным числом. Пример: /newtask 150 Текст задания');
   }
@@ -202,7 +190,6 @@ bot.command('newtask', (ctx) => {
   );
 });
 
-// /market — список открытых задач
 bot.command('market', (ctx) => {
   const userId = ctx.from.id;
   const openTasks = data.tasks.filter(
@@ -224,7 +211,6 @@ bot.command('market', (ctx) => {
   );
 });
 
-// /take ID — взять задачу в работу
 bot.command('take', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   const idStr = parts[1];
@@ -269,7 +255,6 @@ bot.command('take', (ctx) => {
   );
 });
 
-// /mytasks — задачи, которые я создал (как заказчик)
 bot.command('mytasks', (ctx) => {
   const userId = ctx.from.id;
   const my = data.tasks.filter((t) => t.customerId === userId);
@@ -287,7 +272,6 @@ bot.command('mytasks', (ctx) => {
   ctx.reply('Твои задачи как заказчика:\n\n' + lines.join('\n\n'));
 });
 
-// /myworks — задачи, которые я выполняю (как фрилансер)
 bot.command('myworks', (ctx) => {
   const userId = ctx.from.id;
   const my = data.tasks.filter((t) => t.performerId === userId);
@@ -304,7 +288,6 @@ bot.command('myworks', (ctx) => {
   ctx.reply('Твои задачи как исполнителя:\n\n' + lines.join('\n\n'));
 });
 
-// /submit ID — исполнитель отправляет задачу на проверку
 bot.command('submit', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   const idStr = parts[1];
@@ -324,14 +307,8 @@ bot.command('submit', (ctx) => {
   const userId = ctx.from.id;
   const task = data.tasks.find((t) => t.id === id);
 
-  if (!task) {
-    return ctx.reply('Задача с таким ID не найдена 🤔');
-  }
-
-  if (task.performerId !== userId) {
-    return ctx.reply('Ты не являешься исполнителем этой задачи.');
-  }
-
+  if (!task) return ctx.reply('Задача с таким ID не найдена 🤔');
+  if (task.performerId !== userId) return ctx.reply('Ты не являешься исполнителем этой задачи.');
   if (task.status !== 'in_progress') {
     return ctx.reply('Задача должна быть в статусе "в работе", чтобы отправить её на проверку.');
   }
@@ -345,7 +322,6 @@ bot.command('submit', (ctx) => {
   );
 });
 
-// /approve ID — заказчик принимает работу и платит исполнителю
 bot.command('approve', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   const idStr = parts[1];
@@ -358,28 +334,17 @@ bot.command('approve', (ctx) => {
   }
 
   const id = parseInt(idStr, 10);
-  if (isNaN(id)) {
-    return ctx.reply('ID должен быть числом. Пример: /approve 1');
-  }
+  if (isNaN(id)) return ctx.reply('ID должен быть числом. Пример: /approve 1');
 
   const userId = ctx.from.id;
   const task = data.tasks.find((t) => t.id === id);
 
-  if (!task) {
-    return ctx.reply('Задача с таким ID не найдена 🤔');
-  }
-
-  if (task.customerId !== userId) {
-    return ctx.reply('Ты не являешься заказчиком этой задачи.');
-  }
-
+  if (!task) return ctx.reply('Задача с таким ID не найдена 🤔');
+  if (task.customerId !== userId) return ctx.reply('Ты не являешься заказчиком этой задачи.');
   if (task.status !== 'submitted') {
     return ctx.reply('Задача должна быть в статусе "на проверке", чтобы её одобрить.');
   }
-
-  if (!task.performerId) {
-    return ctx.reply('У задачи нет исполнителя.');
-  }
+  if (!task.performerId) return ctx.reply('У задачи нет исполнителя.');
 
   const customer = getUser(task.customerId);
   const performer = getUser(task.performerId);
@@ -405,7 +370,6 @@ bot.command('approve', (ctx) => {
   );
 });
 
-// /canceltask ID — отменить / отказаться от задачи
 bot.command('canceltask', (ctx) => {
   const parts = ctx.message.text.trim().split(' ');
   const idStr = parts[1];
@@ -418,16 +382,12 @@ bot.command('canceltask', (ctx) => {
   }
 
   const id = parseInt(idStr, 10);
-  if (isNaN(id)) {
-    return ctx.reply('ID должен быть числом. Пример: /canceltask 1');
-  }
+  if (isNaN(id)) return ctx.reply('ID должен быть числом. Пример: /canceltask 1');
 
   const userId = ctx.from.id;
   const task = data.tasks.find((t) => t.id === id);
 
-  if (!task) {
-    return ctx.reply('Задача с таким ID не найдена 🤔');
-  }
+  if (!task) return ctx.reply('Задача с таким ID не найдена 🤔');
 
   // заказчик отменяет задачу
   if (task.customerId === userId) {
@@ -481,8 +441,6 @@ bot.launch().then(() => {
 });
 
 // ====== ВЕБ-СЕРВЕР ======
-
-// раздаём статические файлы из папки public (в том числе index.html)
 app.use(express.static('public'));
 
 // API для задач — используется нашей веб-панелью
