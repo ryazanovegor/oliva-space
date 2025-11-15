@@ -2,366 +2,640 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Домовой P2P • Вынос мусора</title>
+  <title>ProThrow — сервис выноса мусора</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Telegram WebApp (совместимо с твоей кнопкой Open) -->
+  <!-- Telegram WebApp (на будущее, если открываем внутри Telegram) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#121a2a;
-      --border:#1f2a44;
-      --muted:#9fb0d0;
-      --text:#e7ecf5;
-      --accent:#22c55e;
-      --accent-2:#3b82f6;
-      --danger:#ef4444;
-      --warn:#f59e0b;
-      --card:#0f172aee;
-      --shadow:0 18px 40px rgba(13,20,35,.6);
-      --radius:16px;
+    :root {
+      --bg-page: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-muted: #e5e7eb;
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --accent: #0ea5e9;      /* светло-голубой */
+      --accent-soft: #e0f2fe;
+      --border-soft: #cbd5f5;
+      --danger: #ef4444;
+      --shadow-card: 0 16px 40px rgba(15, 23, 42, 0.12);
+      --radius-xl: 18px;
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--text);
-      font:500 16px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Arial;
-      display:flex; flex-direction:column;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    .wrap{width:100%; max-width:980px; margin:0 auto; padding:16px 16px 24px}
-
-    header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding:10px 0 14px; position:sticky; top:0; background:linear-gradient(180deg,var(--bg),transparent 92%);
-      z-index:5;
+    body {
+      background: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .logo{font-weight:800; letter-spacing:.3px}
-    .logo span{color:var(--accent)}
-    .hint{font-size:12px; color:var(--muted)}
 
-    .tabs{
-      display:flex; gap:8px; border-bottom:1px solid var(--border); padding:6px 0 10px; margin-bottom:14px;
+    .app {
+      max-width: 1080px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 24px;
     }
-    .tab{
-      padding:7px 12px; font-size:14px; border-radius:999px;
-      border:1px solid transparent; color:var(--muted); cursor:pointer; transition:.15s;
-      background:transparent;
-    }
-    .tab.active{border-color:var(--border); color:var(--text); background:#0e1830}
 
-    .toolbar{
-      display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
     }
-    .select, .input{
-      background:var(--panel); border:1px solid var(--border); color:var(--text);
-      border-radius:12px; padding:10px 12px; font-size:14px;
+
+    .logo {
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: 0.02em;
     }
-    .input{flex:1 1 180px}
 
-    .section{display:none}
-    .section.active{display:block}
-
-    .list{
-      display:flex; flex-direction:column; gap:12px; min-height:120px;
+    .logo span {
+      color: var(--accent);
     }
-    .card{
-      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
-      box-shadow:var(--shadow); padding:12px 12px;
+
+    .tagline {
+      font-size: 12px;
+      color: var(--text-muted);
     }
-    .row{display:flex; justify-content:space-between; gap:12px; align-items:flex-start}
-    .title{font-size:15px; font-weight:700}
-    .price{font-weight:800}
-    .muted{color:var(--muted); font-size:13px}
-    .pill{
-      font-size:12px; padding:4px 8px; border-radius:999px;
-      border:1px solid var(--border); background:rgba(255,255,255,.03)
+
+    .profile-pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--bg-card);
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
     }
-    .pill.exec{color:#4ade80; border-color:#184d33; background:rgba(34,197,94,.08)}
-    .pill.cust{color:#60a5fa; border-color:#1d3f71; background:rgba(59,130,246,.10)}
 
-    .meta{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 6px}
-    .meta .k{color:var(--muted); font-size:12px}
-
-    .actions{display:flex; gap:8px; margin-top:8px}
-    .btn{
-      flex:0 0 auto; padding:10px 12px; font-size:14px; border-radius:12px;
-      border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+      overflow-x: auto;
     }
-    .btn:active{transform:translateY(1px)}
-    .btn-primary{background:var(--accent); border-color:var(--accent); color:#04120a}
-    .btn-ghost{opacity:.85}
-    .btn-danger{background:var(--danger); border-color:var(--danger); color:#fff}
-    .btn-block{width:100%}
 
-    /* форма */
-    .form{
-      display:grid; gap:10px; grid-template-columns:1fr 1fr; background:var(--card);
-      padding:14px; border:1px solid var(--border); border-radius:var(--radius)
+    .tab {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
     }
-    .form h3{grid-column:1/-1; margin:4px 0 10px}
-    .field{display:flex; flex-direction:column; gap:6px}
-    .label{font-size:13px; color:var(--muted)}
-    .form .input, .form .select{width:100%}
-    .radio-line{grid-column:1/-1; display:flex; gap:8px}
-    .radio{display:flex; gap:8px; align-items:center; background:var(--panel); border:1px solid var(--border); padding:8px 10px; border-radius:12px}
-    .form .btn-primary{grid-column:1/-1; margin-top:6px}
-    .form small{color:var(--muted); grid-column:1/-1}
 
-    .empty{padding:14px; border:1px dashed var(--border); border-radius:12px; color:var(--muted); text-align:center}
+    .tab.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--text-main);
+    }
 
-    footer{margin-top:18px; color:var(--muted); font-size:12px; text-align:center}
-    @media (max-width:640px){
-      .form{grid-template-columns:1fr}
-      .row{flex-direction:column; align-items:flex-start}
-      .actions{width:100%}.actions .btn{flex:1 1 auto}
+    main {
+      display: block;
+    }
+
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid #e5e7eb;
+      box-shadow: var(--shadow-card);
+      padding: 14px 16px 16px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .panel-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .panel-header small {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .orders-list {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 430px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .order {
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      padding: 10px 12px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .order-place {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .order-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .order-price {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    .order-footer {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      margin-top: 2px;
+    }
+
+    .badge-role {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+      color: var(--text-main);
+      font-size: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-soft {
+      border-color: transparent;
+      background: #e5f3ff;
+      color: #0369a1;
+    }
+
+    .btn[disabled] {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    .empty-state,
+    .error-state {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    .empty-state {
+      color: var(--text-muted);
+    }
+
+    .error-state {
+      color: var(--danger);
+    }
+
+    /* Форма заявки (заказчик) */
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+      margin-bottom: 10px;
+    }
+
+    .form-field label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 3px;
+    }
+
+    .form-field input,
+    .form-field textarea,
+    .form-field select {
+      width: 100%;
+      padding: 6px 8px;
+      font-size: 13px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+    }
+
+    .form-field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .roles-toggle {
+      display: inline-flex;
+      border-radius: 999px;
+      background: #e5e7eb;
+      padding: 2px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .roles-toggle button {
+      border: none;
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .roles-toggle button.active {
+      background: #ffffff;
+      color: var(--text-main);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    }
+
+    /* Чат */
+
+    .chat-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 360px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      background: #f9fafb;
+      overflow-y: auto;
+      font-size: 12px;
+    }
+
+    .chat-message {
+      margin-bottom: 6px;
+      max-width: 80%;
+      padding: 6px 8px;
+      border-radius: 10px;
+    }
+
+    .chat-message.me {
+      margin-left: auto;
+      background: var(--accent-soft);
+    }
+
+    .chat-message.other {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+    }
+
+    .chat-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .chat-input-bar input {
+      flex: 1;
+      padding: 6px 8px;
+      font-size: 13px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      background: #ffffff;
+    }
+
+    footer {
+      padding: 10px 20px 18px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="app">
+    <!-- Шапка -->
     <header>
       <div>
-        <div class="logo">Домовой <span>P2P</span></div>
-        <div class="hint">Вынос мусора • один дом — две роли: жильцы и исполнители</div>
+        <div class="logo">Pro<span>Throw</span></div>
+        <div class="tagline">просто клик – никаких заморочек</div>
       </div>
-      <div class="pill">бета</div>
+      <div class="profile-pill">
+        🧑‍💼 Гость · статус: <strong>просмотр</strong>
+      </div>
     </header>
 
+    <!-- Вкладки -->
     <nav class="tabs">
-      <button class="tab active" data-tab="feed">Лента</button>
-      <button class="tab" data-tab="mine">Мои</button>
-      <button class="tab" data-tab="create">Создать</button>
+      <button class="tab active" data-tab="market">📋 Маркет заявок</button>
+      <button class="tab" data-tab="customer">🧑‍💻 Я заказчик</button>
+      <button class="tab" data-tab="runner">🚶‍♂️ Я исполнитель</button>
+      <button class="tab" data-tab="chat">💬 Чат заказа</button>
     </nav>
 
-    <!-- FEED -->
-    <section id="feed" class="section active">
-      <div class="toolbar">
-        <select id="filterType" class="select">
-          <option value="all">Тип: все</option>
-          <option value="offer">Предложения исполнителей</option>
-          <option value="request">Заявки жильцов</option>
-        </select>
-        <select id="filterEntrance" class="select">
-          <option value="all">Подъезд: любой</option>
-          <option value="1">1 подъезд</option>
-          <option value="2">2 подъезд</option>
-          <option value="3">3 подъезд</option>
-          <option value="4">4 подъезд</option>
-        </select>
-        <input id="search" class="input" placeholder="Поиск: комментарий, кв., этаж..." />
-      </div>
+    <!-- Панели -->
+    <main>
+      <!-- Маркет заявок -->
+      <section class="panel active" data-panel="market">
+        <div class="card">
+          <div class="panel-header">
+            <h2>Маркет заявок</h2>
+            <small>Выбирай заказы на вынос мусора, как P2P-ордеры. Адрес уточняется в чате.</small>
+          </div>
 
-      <div id="feedList" class="list"></div>
-      <div id="feedEmpty" class="empty" style="display:none">Пока пусто. Создайте объявление на вкладке «Создать»</div>
-    </section>
-
-    <!-- MY -->
-    <section id="mine" class="section">
-      <div class="list" id="myList"></div>
-      <div class="empty" id="myEmpty" style="display:none">У вас ещё нет объявлений.</div>
-    </section>
-
-    <!-- CREATE -->
-    <section id="create" class="section">
-      <form id="createForm" class="form">
-        <h3>Создать объявление</h3>
-
-        <div class="radio-line">
-          <label class="radio">
-            <input type="radio" name="kind" value="offer" checked />
-            Я исполнитель — <b>предложение</b> (я вынесу, назначаю цену)
-          </label>
-          <label class="radio">
-            <input type="radio" name="kind" value="request" />
-            Я жилец — <b>заявка</b> (мне вынести, предлагаю цену)
-          </label>
+          <div id="market-error" class="error-state" style="display:none;"></div>
+          <div id="market-orders" class="orders-list"></div>
+          <div id="market-empty" class="empty-state" style="display:none;">
+            Пока нет активных заявок. Создай свою на вкладке <b>«Я заказчик»</b>.
+          </div>
         </div>
+      </section>
 
-        <div class="field">
-          <span class="label">Подъезд</span>
-          <select name="entrance" class="select" required>
-            <option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option>
-          </select>
+      <!-- Я заказчик -->
+      <section class="panel" data-panel="customer">
+        <div class="card">
+          <div class="panel-header">
+            <h2>Создать заявку</h2>
+            <small>Укажи только то, что нужно исполнителю. Без лишних заморочек.</small>
+          </div>
+
+          <div class="roles-toggle" aria-label="Роль">
+            <button type="button" class="active">Заказчик</button>
+            <button type="button" disabled>Исполнитель</button>
+          </div>
+
+          <form id="customer-form">
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="entrance">Подъезд</label>
+                <input id="entrance" type="text" placeholder="Например, 2" />
+              </div>
+              <div class="form-field">
+                <label for="floor">Этаж</label>
+                <input id="floor" type="text" placeholder="Например, 7" />
+              </div>
+              <div class="form-field">
+                <label for="flat">Квартира</label>
+                <input id="flat" type="text" placeholder="Например, 53" />
+              </div>
+              <div class="form-field">
+                <label for="bags">Пакеты</label>
+                <input id="bags" type="number" min="1" placeholder="Сколько пакетов" />
+              </div>
+              <div class="form-field">
+                <label for="until">До какого времени</label>
+                <input id="until" type="time" />
+              </div>
+              <div class="form-field">
+                <label for="price">Сумма, ₽</label>
+                <input id="price" type="number" min="0" step="10" placeholder="Например, 120" />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="comment">Комментарий для исполнителя</label>
+              <textarea id="comment" placeholder="Где оставить ведро / есть ли лифт / код домофона и т.п."></textarea>
+            </div>
+
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn btn-soft" id="customer-reset">Сбросить</button>
+              <button type="submit" class="btn btn-primary">Создать заявку</button>
+            </div>
+
+            <div class="empty-state" style="margin-top:8px;">
+              Пока форма просто заглушка — позже привяжем к бэкенду и кассе.
+            </div>
+          </form>
         </div>
+      </section>
 
-        <div class="field">
-          <span class="label">Этаж</span>
-          <input name="floor" class="input" type="number" min="1" max="30" placeholder="Напр. 7" required/>
+      <!-- Я исполнитель -->
+      <section class="panel" data-panel="runner">
+        <div class="card">
+          <div class="panel-header">
+            <h2>Режим исполнителя</h2>
+            <small>Выбирай заказы из маркета, а детали уточняй в чате. Адрес заранее знать не обязательно.</small>
+          </div>
+
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">
+            Здесь будет статистика исполнителя: сколько заказов выполнено, рейтинг, доступные смены.
+            Пока это только макет интерфейса.
+          </p>
+
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <button class="btn btn-primary" type="button" disabled>Включить статус «Исполнитель»</button>
+            <button class="btn" type="button" disabled>Пауза</button>
+          </div>
+
+          <div class="empty-state">
+            Все активные заявки смотри на вкладке <b>«Маркет заявок»</b>.  
+            При нажатии «Взять» будет открываться чат с заказчиком.
+          </div>
         </div>
+      </section>
 
-        <div class="field">
-          <span class="label">Квартира</span>
-          <input name="flat" class="input" type="number" min="1" max="999" placeholder="Напр. 64" required/>
+      <!-- Чат -->
+      <section class="panel" data-panel="chat">
+        <div class="card">
+          <div class="panel-header">
+            <h2>Чат заказа</h2>
+            <small>Только заказчик и исполнитель. Для уточнения адреса и контроля оплаты.</small>
+          </div>
+
+          <div class="chat-wrapper">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-message other">
+                <div class="chat-meta">Заказчик · 18:30</div>
+                Можно вынести два пакета до 19:00? Подъезд 2, этаж 7, кв. 53.
+              </div>
+              <div class="chat-message me">
+                <div class="chat-meta">Исполнитель · 18:31</div>
+                Да, буду через 10 минут. Куда потом поставить ведро?
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <input id="chat-input" type="text" placeholder="Написать сообщение..." />
+              <button class="btn btn-primary" type="button" id="chat-send" disabled>Отправить</button>
+            </div>
+
+            <div class="empty-state">
+              Сейчас чат работает как макет. Позже сюда добавим реальный обмен сообщениями и модерацию.
+            </div>
+          </div>
         </div>
-
-        <div class="field">
-          <span class="label">Цена (₽)</span>
-          <input name="price" class="input" type="number" min="20" step="1" placeholder="Напр. 70" required/>
-        </div>
-
-        <div class="field">
-          <span class="label">Когда вынести</span>
-          <input name="when" class="input" type="time" required/>
-        </div>
-
-        <div class="field">
-          <span class="label">Комментарий (опционально)</span>
-          <input name="comment" class="input" placeholder="Пакет у двери / позвонить в домофон..." />
-        </div>
-
-        <button class="btn btn-primary" type="submit">Опубликовать</button>
-        <small>Подтверждение и оплата пока через чат с ботом. Веб-экшены подключим позже.</small>
-      </form>
-    </section>
-
-    <footer>Домовой P2P · прототип. Всё локально, без реальной оплаты.</footer>
+      </section>
+    </main>
   </div>
 
+  <footer>
+    ProThrow · сервис выноса мусора.  
+    Админ-модерация заявок и чатов подключим на бэкенде.
+  </footer>
+
   <script>
-    // ===== Telegram WebApp (необязательно, но пусть будет красиво)
-    try { window.Telegram?.WebApp?.expand?.(); } catch(e){}
-
-    // ===== ДАННЫЕ (в реале ты подставишь свои /api)
-    const me = { id: Math.floor(Math.random()*1e9) }; // псевдо-юзер для "Мои"
-    const items = [
-      // type: 'offer' (исполнитель), 'request' (жилец)
-      { id:1, type:'offer',  entrance:'1', floor:5, flat:27, price:70,  when:'20:00', comment:'Заберу за 10 минут', author:111 },
-      { id:2, type:'request',entrance:'2', floor:12,flat:104,price:60,  when:'19:30', comment:'Пакет у двери',     author:222 },
-      { id:3, type:'offer',  entrance:'1', floor:7, flat:39, price:80,  when:'21:00', comment:'Лифт исправен',     author:333 },
-      { id:4, type:'request',entrance:'3', floor:2, flat:14, price:40,  when:'18:15', comment:'Позвоните',         author:444 },
-    ];
-    let nextId = 5;
-
-    // ===== ВКЛАДКИ
+    // Переключение вкладок
     const tabs = document.querySelectorAll('.tab');
-    const sections = document.querySelectorAll('.section');
-    tabs.forEach(t=>{
-      t.addEventListener('click', ()=>{
-        tabs.forEach(x=>x.classList.remove('active'));
-        sections.forEach(s=>s.classList.remove('active'));
-        t.classList.add('active');
-        document.getElementById(t.dataset.tab).classList.add('active');
-        if (t.dataset.tab==='mine') renderMy();
-        if (t.dataset.tab==='feed') renderFeed();
+    const panels = document.querySelectorAll('.panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelector(`[data-panel="${target}"]`).classList.add('active');
       });
     });
 
-    // ===== РЕНДЕР КАРТОЧКИ
-    function renderCard(it){
-      const el = document.createElement('div');
-      el.className = 'card';
+    // Заглушка маркета: несколько фейковых заявок
+    const marketListEl = document.getElementById('market-orders');
+    const emptyEl = document.getElementById('market-empty');
 
-      const typePill = it.type==='offer' ? '<span class="pill exec">предложение исполнителя</span>'
-                                         : '<span class="pill cust">заявка жильца</span>';
+    function renderStubOrders() {
+      const stub = [
+        {
+          id: 1,
+          entrance: '2',
+          floor: '7',
+          flat: '53',
+          bags: 2,
+          until: '19:00',
+          price: 120,
+          comment: 'Лифт есть, ведро оставить у двери.'
+        },
+        {
+          id: 2,
+          entrance: '1',
+          floor: '3',
+          flat: '12',
+          bags: 1,
+          until: '21:00',
+          price: 90,
+          comment: 'Домофон 23, мусоропровод во дворе.'
+        },
+        {
+          id: 3,
+          entrance: '4',
+          floor: '9',
+          flat: '81',
+          bags: 3,
+          until: '20:30',
+          price: 160,
+          comment: 'Без лифта, но пакеты лёгкие.'
+        }
+      ];
 
-      el.innerHTML = `
-        <div class="row">
-          <div>
-            <div class="title">Подъезд ${it.entrance} • этаж ${it.floor} • кв. ${it.flat}</div>
-            <div class="meta">
-              ${typePill}
-              <span class="k">вынести к&nbsp;${it.when}</span>
+      marketListEl.innerHTML = '';
+
+      stub.forEach(order => {
+        const el = document.createElement('div');
+        el.className = 'order';
+        el.innerHTML = `
+          <div class="order-header">
+            <div>
+              <div class="order-place">Подъезд ${order.entrance} · Этаж ${order.floor} · Кв. ${order.flat}</div>
+              <div class="order-meta">Пакетов: ${order.bags} · До ${order.until}</div>
             </div>
-            ${it.comment ? `<div class="muted">💬 ${escapeHtml(it.comment)}</div>` : ``}
+            <div>
+              <div class="order-price">${order.price.toFixed(0)} ₽</div>
+              <div class="order-actions">
+                <span class="badge-role">Заказчик</span>
+                <button class="btn btn-primary" disabled>Взять</button>
+              </div>
+            </div>
           </div>
-          <div class="price">${Number(it.price).toFixed(0)} ₽</div>
-        </div>
-        <div class="actions">
-          ${
-            it.author===me.id
-              ? `<button class="btn btn-danger" data-act="del">Удалить</button>`
-              : `<button class="btn btn-primary" data-act="take">Взять</button>
-                 <button class="btn btn-ghost" data-act="more">Подробнее</button>`
-          }
-        </div>
-      `;
-
-      el.querySelectorAll('button').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const act = btn.dataset.act;
-          if (act==='take') {
-            alert('✅ Заявка/предложение помечено как принято.\n(Дальше — чат с ботом и подтверждение.)');
-          } else if (act==='more') {
-            alert('ℹ️ В продакшене — экран с деталями и гео/чатом.');
-          } else if (act==='del') {
-            const idx = items.findIndex(x=>x.id===it.id);
-            if (idx>-1) { items.splice(idx,1); renderFeed(); renderMy(); }
-          }
-        });
-      });
-      return el;
-    }
-
-    // ===== ЛЕНТА
-    const feedList = document.getElementById('feedList');
-    const feedEmpty = document.getElementById('feedEmpty');
-    const filterType = document.getElementById('filterType');
-    const filterEntrance = document.getElementById('filterEntrance');
-    const search = document.getElementById('search');
-
-    [filterType, filterEntrance, search].forEach(el=>el.addEventListener('input', renderFeed));
-
-    function renderFeed(){
-      const t = filterType.value;          // all/offer/request
-      const e = filterEntrance.value;      // all/1/2/3/4
-      const q = search.value.toLowerCase();
-
-      const arr = items.filter(it=>{
-        if (t!=='all' && it.type!==t) return false;
-        if (e!=='all' && it.entrance!==e) return false;
-        const hay = `${it.comment||''} ${it.flat} ${it.floor}`.toLowerCase();
-        if (q && !hay.includes(q)) return false;
-        return true;
+          <div class="order-footer">${order.comment}</div>
+        `;
+        marketListEl.appendChild(el);
       });
 
-      feedList.innerHTML = '';
-      arr.forEach(it=>feedList.appendChild(renderCard(it)));
-      feedEmpty.style.display = arr.length? 'none':'block';
+      if (stub.length === 0) {
+        emptyEl.style.display = 'block';
+      } else {
+        emptyEl.style.display = 'none';
+      }
     }
 
-    // ===== МОИ
-    const myList = document.getElementById('myList');
-    const myEmpty = document.getElementById('myEmpty');
-    function renderMy(){
-      const arr = items.filter(it=>it.author===me.id);
-      myList.innerHTML = '';
-      arr.forEach(it=>myList.appendChild(renderCard(it)));
-      myEmpty.style.display = arr.length? 'none':'block';
-    }
-
-    // ===== СОЗДАНИЕ
-    const form = document.getElementById('createForm');
-    form.addEventListener('submit', e=>{
-      e.preventDefault();
-      const fd = new FormData(form);
-      const it = {
-        id: nextId++,
-        type: fd.get('kind'),                // offer | request
-        entrance: fd.get('entrance'),
-        floor: Number(fd.get('floor')),
-        flat: Number(fd.get('flat')),
-        price: Number(fd.get('price')),
-        when: fd.get('when'),
-        comment: fd.get('comment')?.trim(),
-        author: me.id
-      };
-      items.unshift(it);
-      form.reset();
-      form.querySelector('input[name="kind"][value="offer"]').checked = true;
-      alert('✅ Объявление опубликовано.');
-      // переключимся в "Мои"
-      document.querySelector('.tab[data-tab="mine"]').click();
-    });
-
-    function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-
-    // стартовый рендер
-    renderFeed();
+    renderStubOrders();
   </script>
 </body>
 </html>
